@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Siri ☯️ - Share Your World</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --surface: #0a0a0a;
+    --surface2: #111;
+    --surface3: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --text: #fff;
+    --text2: #aaa;
+    --text3: #555;
+    --accent: #fff;
+    --glass: rgba(255,255,255,0.05);
+    --glass2: rgba(255,255,255,0.1);
+    --glass3: rgba(255,255,255,0.15);
+    --jelly1: rgba(255,255,255,0.03);
+    --jelly2: rgba(255,255,255,0.07);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ===== ANIMATED LIQUID GLASS BACKGROUND ===== */
+  .liquid-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .liquid-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: blobMove 12s ease-in-out infinite alternate;
+    opacity: 0.15;
+  }
+
+  .blob1 { width:600px; height:600px; background:radial-gradient(circle, #fff 0%, #888 50%, transparent 70%); top:-200px; left:-200px; animation-delay:0s; animation-duration:14s; }
+  .blob2 { width:400px; height:400px; background:radial-gradient(circle, #ccc 0%, #444 50%, transparent 70%); bottom:-100px; right:-100px; animation-delay:-5s; animation-duration:11s; }
+  .blob3 { width:300px; height:300px; background:radial-gradient(circle, #fff 0%, #666 50%, transparent 70%); top:50%; left:60%; animation-delay:-3s; animation-duration:9s; }
+  .blob4 { width:250px; height:250px; background:radial-gradient(circle, #aaa 0%, #333 50%, transparent 70%); top:30%; right:10%; animation-delay:-7s; animation-duration:13s; }
+
+  @keyframes blobMove {
+    0% { transform: translate(0,0) scale(1) rotate(0deg); }
+    33% { transform: translate(60px,-40px) scale(1.1) rotate(120deg); }
+    66% { transform: translate(-40px,80px) scale(0.9) rotate(240deg); }
+    100% { transform: translate(30px,30px) scale(1.05) rotate(360deg); }
+  }
+
+  /* Jelly glass shimmer overlay */
+  .jelly-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse 200% 100% at 10% 0%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 150% 150% at 90% 100%, rgba(255,255,255,0.03) 0%, transparent 50%);
+    animation: jellyShimmer 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes jellyShimmer {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.02); }
+  }
+
+  /* ===== LAYOUT ===== */
+  #app { position: relative; z-index: 10; display: flex; height: 100vh; overflow: hidden; }
+
+  /* ===== PAGES ===== */
+  .page { display:none; width:100%; height:100vh; overflow-y:auto; }
+  .page.active { display:flex; flex-direction:column; }
+  .page::-webkit-scrollbar { width:4px; }
+  .page::-webkit-scrollbar-thumb { background: var(--glass3); border-radius:2px; }
+
+  /* ===== GLASS COMPONENTS ===== */
+  .glass-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-card::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.03) 100%);
+    pointer-events:none;
+  }
+
+  .glass-btn {
+    background: var(--glass2);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    border-radius: 50px;
+    padding: 10px 20px;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-btn::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+    opacity:0;
+    transition: opacity 0.3s;
+  }
+
+  .glass-btn:hover { transform:translateY(-2px) scale(1.03); background:var(--glass3); border-color:rgba(255,255,255,0.2); }
+  .glass-btn:hover::before { opacity:1; }
+  .glass-btn:active { transform:scale(0.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    color: #000;
+    border: none;
+    font-weight: 700;
+  }
+  .btn-primary:hover { background: linear-gradient(135deg, #e8e8e8 0%, #bbb 100%); }
+
+  /* ===== AUTH PAGE ===== */
+  #authPage {
+    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .auth-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px;
+    animation: fadeUp 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(40px) scale(0.95); }
+    to { opacity:1; transform:translateY(0) scale(1); }
+  }
+
+  .logo-big {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .logo-symbol {
+    font-size: 64px;
+    display: block;
+    animation: logoSpin 20s linear infinite;
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+  }
+
+  @keyframes logoSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .logo-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    margin-top: 8px;
+  }
+
+  .logo-tagline {
+    color: var(--text3);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .auth-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 50px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: transparent;
+    color: var(--text3);
+  }
+
+  .auth-tab.active {
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    color: #000;
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .input-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .glass-input {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .glass-input:focus {
+    border-color: rgba(255,255,255,0.3);
+    background: var(--glass2);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+  }
+
+  .glass-input::placeholder { color: var(--text3); }
+
+  .auth-submit {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    border-radius: 14px;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    color: #000;
+    margin-top: 8px;
+  }
+
+  .auth-submit:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(255,255,255,0.15); }
+  .auth-submit:active { transform: translateY(0); }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: none;
+    padding: 12px 20px 24px;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-top: 1px solid var(--border);
+  }
+
+  .bottom-nav.visible { display: flex; }
+
+  .nav-items {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 14px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .nav-item:hover, .nav-item.active { background: var(--glass2); }
+
+  .nav-icon {
+    font-size: 22px;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .nav-item.active .nav-icon { transform: scale(1.2); }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text3);
+  }
+
+  .nav-item.active .nav-label { color: var(--text); }
+
+  /* Upload FAB */
+  .nav-upload {
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: 0 8px 24px rgba(255,255,255,0.2);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .nav-upload:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 12px 32px rgba(255,255,255,0.3); }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .top-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-logo-icon { font-size: 24px; }
+
+  .top-logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .top-actions { display:flex; gap:10px; }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .icon-btn:hover { background: var(--glass2); transform: scale(1.05); }
+
+  /* ===== HOME FEED ===== */
+  #homePage { padding-bottom: 100px; }
+
+  .feed-tabs {
+    display: flex;
+    gap: 0;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+  }
+
+  .feed-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+  }
+
+  .feed-tab.active { color: var(--text); border-color: var(--text); }
+
+  .feed-container { padding: 16px 20px; display:flex; flex-direction:column; gap:16px; }
+
+  /* Video Card */
+  .video-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .video-card:hover { transform: scale(1.01); }
+
+  .video-thumb {
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .video-thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.8) 100%);
+  }
+
+  .video-thumb-emoji {
+    position: relative;
+    z-index: 1;
+    animation: thumbPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes thumbPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .video-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    z-index: 5;
+  }
+
+  .video-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #333 0%, #666 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+
+  .avatar:hover { transform: scale(1.1); }
+
+  .avatar.lg { width:64px; height:64px; font-size:28px; }
+  .avatar.xl { width:90px; height:90px; font-size:40px; border-width:3px; }
+
+  .video-username { font-size: 14px; font-weight: 700; color: #fff; }
+  .video-caption { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.4; }
+
+  .video-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .tag {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+  }
+
+  .video-actions {
+    position: absolute;
+    right: 12px;
+    bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    z-index: 6;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .action-btn:hover { transform: scale(1.2); }
+
+  .action-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--glass2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s;
+  }
+
+  .action-btn:hover .action-icon { background: var(--glass3); }
+  .action-btn.liked .action-icon { background: rgba(255,255,255,0.2); }
+
+  .action-count { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); }
+
+  /* Audio bar */
+  .audio-bar {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 6;
+  }
+
+  .audio-disc {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #333 0%, #666 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    animation: spin 4s linear infinite;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  .audio-info { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+  /* Play button overlay */
+  .play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .video-card:hover .play-overlay { opacity: 1; }
+
+  .play-btn-large {
+    width: 70px;
+    height: 70px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+
+  /* ===== SEARCH PAGE ===== */
+  #searchPage { padding-bottom: 100px; }
+
+  .search-bar-wrap { padding: 12px 20px; }
+
+  .search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 12px 18px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+  }
+
+  .search-input-wrap:focus-within {
+    border-color: rgba(255,255,255,0.3);
+    background: var(--glass2);
+  }
+
+  .search-icon { font-size: 18px; color: var(--text3); }
+
+  .search-field {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+  }
+
+  .search-field::placeholder { color: var(--text3); }
+
+  .trending-section { padding: 16px 20px; }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  .trend-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .trend-chip {
+    padding: 8px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .trend-chip:hover { background: var(--glass2); border-color: rgba(255,255,255,0.2); transform: scale(1.02); }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 20px;
+  }
+
+  .search-video-item {
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    aspect-ratio: 9/16;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    position: relative;
+    transition: transform 0.3s;
+  }
+
+  .search-video-item:hover { transform: scale(1.02); }
+
+  .search-item-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 8px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* ===== PROFILE PAGE ===== */
+  #profilePage { padding-bottom: 100px; }
+
+  .profile-header {
+    padding: 30px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-avatar-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .profile-avatar-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff, #444, #fff);
+    animation: ringRotate 4s linear infinite;
+  }
+
+  @keyframes ringRotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .profile-handle { color: var(--text3); font-size: 14px; margin-bottom: 12px; }
+
+  .profile-bio {
+    color: var(--text2);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 300px;
+    margin-bottom: 16px;
+  }
+
+  .profile-stats {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 20px;
+  }
+
+  .stat-item { text-align: center; }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    display: block;
+  }
+
+  .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; }
+
+  .profile-actions { display: flex; gap: 10px; }
+
+  .profile-videos {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2px;
+    padding: 16px 2px;
+  }
+
+  .profile-video-item {
+    aspect-ratio: 3/4;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.2s;
+  }
+
+  .profile-video-item:hover { opacity: 0.8; }
+
+  .profile-video-count {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* ===== UPLOAD PAGE ===== */
+  #uploadPage {
+    padding: 20px;
+    padding-bottom: 100px;
+    align-items: center;
+  }
+
+  .upload-area {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .upload-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+  }
+
+  .upload-sub { color: var(--text3); text-align:center; margin-bottom: 28px; font-size: 14px; }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 24px;
+    padding: 60px 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    margin-bottom: 24px;
+  }
+
+  .upload-zone:hover {
+    border-color: rgba(255,255,255,0.3);
+    background: var(--glass2);
+    transform: scale(1.01);
+  }
+
+  .upload-icon { font-size: 60px; margin-bottom: 16px; display: block; }
+  .upload-text { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .upload-hint { font-size: 13px; color: var(--text3); }
+
+  .upload-form { display: flex; flex-direction: column; gap: 16px; }
+
+  .form-group { display:flex; flex-direction:column; gap:8px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+
+  .form-textarea {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .form-textarea:focus { border-color: rgba(255,255,255,0.3); background: var(--glass2); }
+  .form-textarea::placeholder { color: var(--text3); }
+
+  /* ===== SETTINGS PAGE ===== */
+  #settingsPage { padding-bottom: 100px; }
+
+  .settings-header {
+    padding: 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .settings-section { padding: 0 20px 8px; }
+  .settings-section-title { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; padding: 12px 0 8px; }
+
+  .settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .settings-item:hover { background: var(--glass2); border-color: rgba(255,255,255,0.15); }
+
+  .settings-item-left { display:flex; align-items:center; gap:12px; }
+  .settings-item-icon { font-size: 20px; }
+  .settings-item-text { font-size: 15px; font-weight: 500; }
+  .settings-item-arrow { color: var(--text3); font-size: 16px; }
+
+  /* Toggle switch */
+  .toggle {
+    width: 46px;
+    height: 26px;
+    background: var(--surface3);
+    border-radius: 13px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: #fff; }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #444;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .toggle.on .toggle-thumb { left: 23px; background: #000; }
+
+  /* ===== NOTIFICATIONS ===== */
+  #notifPage { padding-bottom: 100px; }
+  .notif-list { padding: 16px 20px; display:flex; flex-direction:column; gap:8px; }
+
+  .notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+  }
+
+  .notif-item:hover { background: var(--glass2); }
+  .notif-item.unread { border-color: rgba(255,255,255,0.15); }
+
+  .notif-avatar { font-size: 24px; width: 44px; height: 44px; background: var(--surface3); border-radius: 50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; border: 1px solid var(--border); }
+  .notif-content { flex: 1; }
+  .notif-text { font-size: 14px; color: var(--text2); line-height: 1.4; }
+  .notif-text strong { color: var(--text); }
+  .notif-time { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .notif-unread-dot { width: 8px; height: 8px; background: #fff; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+
+  /* ===== FOLLOW CARD ===== */
+  .suggest-section { padding: 16px 20px; }
+  .suggest-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; }
+  .suggest-scroll::-webkit-scrollbar { display:none; }
+
+  .suggest-card {
+    flex-shrink: 0;
+    width: 130px;
+    padding: 16px 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+  }
+
+  .suggest-card:hover { background: var(--glass2); transform: translateY(-2px); }
+  .suggest-name { font-size: 13px; font-weight: 700; margin: 8px 0 4px; }
+  .suggest-handle { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+
+  .follow-btn {
+    width: 100%;
+    padding: 7px;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    background: var(--glass2);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .follow-btn:hover, .follow-btn.following {
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    color: #000;
+    border-color: transparent;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    align-items: flex-end;
+    animation: fadeIn 0.2s;
+  }
+
+  .modal-overlay.open { display:flex; }
+
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .modal-sheet {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 28px 28px 0 0;
+    padding: 20px;
+    animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-actions { display:flex; flex-direction:column; gap:8px; }
+  .modal-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .modal-action-btn:hover { background: var(--glass2); }
+  .modal-action-icon { font-size: 20px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    padding: 12px 24px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== ANIMATIONS ===== */
+  .page-enter { animation: pageSlide 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pageSlide { from{opacity:0; transform:translateX(30px)} to{opacity:1; transform:translateX(0)} }
+
+  .heart-pop { animation: heartPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes heartPop { 0%{transform:scale(1)} 50%{transform:scale(1.5)} 100%{transform:scale(1)} }
+
+  /* ===== DEVELOPED BY ===== */
+  .dev-badge {
+    text-align: center;
+    padding: 20px;
+    color: var(--text3);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .dev-badge strong { color: var(--text2); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (min-width: 768px) {
+    #app { justify-content: center; }
+    .page { max-width: 480px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .bottom-nav { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Liquid Animated Background -->
+<div class="liquid-bg">
+  <div class="liquid-blob blob1"></div>
+  <div class="liquid-blob blob2"></div>
+  <div class="liquid-blob blob3"></div>
+  <div class="liquid-blob blob4"></div>
+</div>
+<div class="jelly-overlay"></div>
+
+<div id="app">
+  <!-- ===== AUTH PAGE ===== -->
+  <div id="authPage" class="page active">
+    <div class="auth-container glass-card">
+      <div class="logo-big">
+        <span class="logo-symbol">☯️</span>
+        <span class="logo-name">Siri</span>
+        <span class="logo-tagline">developed by Nirosha සඳරුවන්</span>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Create Account</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="input-group">
+          <label class="input-label">Username or Email</label>
+          <input class="glass-input" type="text" placeholder="Enter your username..." id="loginUser">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Password</label>
+          <input class="glass-input" type="password" placeholder="Enter password..." id="loginPass">
+        </div>
+        <button class="auth-submit" onclick="doLogin()">Sign In ☯️</button>
+      </div>
+
+      <div id="registerForm" style="display:none">
+        <div class="input-group">
+          <label class="input-label">Full Name</label>
+          <input class="glass-input" type="text" placeholder="Your full name..." id="regName">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Username</label>
+          <input class="glass-input" type="text" placeholder="@username..." id="regUser">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Email</label>
+          <input class="glass-input" type="email" placeholder="your@email.com..." id="regEmail">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Password</label>
+          <input class="glass-input" type="password" placeholder="Create password..." id="regPass">
+        </div>
+        <button class="auth-submit" onclick="doRegister()">Create Account 🚀</button>
+      </div>
+
+      <div class="dev-badge" style="margin-top:20px;">☯️ <strong>Siri</strong> — Share Your World</div>
+    </div>
+  </div>
+
+  <!-- ===== HOME PAGE ===== -->
+  <div id="homePage" class="page">
+    <div class="top-bar">
+      <div class="top-logo">
+        <span class="top-logo-icon">☯️</span>
+        <span class="top-logo-text">Siri</span>
+      </div>
+      <div class="top-actions">
+        <div class="icon-btn" onclick="showToast('🔴 Live coming soon!')">🔴</div>
+        <div class="icon-btn" onclick="showToast('💬 Messages coming soon!')">💬</div>
+      </div>
+    </div>
+
+    <div class="feed-tabs">
+      <div class="feed-tab" onclick="switchFeed('follow', this)">Following</div>
+      <div class="feed-tab active" onclick="switchFeed('foryou', this)">For You</div>
+      <div class="feed-tab" onclick="switchFeed('live', this)">🔴 Live</div>
+    </div>
+
+    <!-- Suggest to Follow -->
+    <div class="suggest-section">
+      <div class="section-title">Suggested for You</div>
+      <div class="suggest-scroll" id="suggestScroll"></div>
+    </div>
+
+    <!-- Feed -->
+    <div class="feed-container" id="feedContainer"></div>
+
+    <div class="dev-badge">☯️ Siri · <strong>Developed by Nirosha සඳරුවන්</strong></div>
+  </div>
+
+  <!-- ===== SEARCH PAGE ===== -->
+  <div id="searchPage" class="page">
+    <div class="top-bar">
+      <div class="top-logo"><span class="top-logo-icon">☯️</span><span class="top-logo-text">Discover</span></div>
+    </div>
+
+    <div class="search-bar-wrap">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-field" id="searchField" type="text" placeholder="Search videos, users, sounds..." oninput="doSearch()">
+        <span id="searchClear" style="cursor:pointer;color:var(--text3);display:none" onclick="clearSearch()">✕</span>
+      </div>
+    </div>
+
+    <div id="searchResults">
+      <div class="trending-section">
+        <div class="section-title">🔥 Trending</div>
+        <div class="trend-chips" id="trendChips"></div>
+        <div class="section-title">🎬 Popular Videos</div>
+      </div>
+      <div class="search-grid" id="searchGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== UPLOAD PAGE ===== -->
+  <div id="uploadPage" class="page">
+    <div class="top-bar">
+      <div class="top-logo"><span class="top-logo-icon">☯️</span><span class="top-logo-text">Upload</span></div>
+      <div class="top-actions">
+        <div class="icon-btn" onclick="cancelUpload()">✕</div>
+      </div>
+    </div>
+
+    <div class="upload-area" style="width:100%;padding:20px;">
+      <div class="upload-title">Share Video</div>
+      <p class="upload-sub">Upload your video to the world 🌍</p>
+
+      <div class="upload-zone" onclick="triggerUpload()">
+        <span class="upload-icon">📹</span>
+        <div class="upload-text">Tap to select video</div>
+        <div class="upload-hint">MP4, MOV · Up to 500MB · Max 10min</div>
+      </div>
+
+      <input type="file" id="videoFile" accept="video/*" style="display:none" onchange="fileSelected()">
+
+      <div class="upload-form">
+        <div class="form-group">
+          <label class="form-label">Caption</label>
+          <textarea class="form-textarea" id="uploadCaption" placeholder="Write a caption for your video... Add hashtags #🔥"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hashtags</label>
+          <input class="glass-input" type="text" id="uploadTags" placeholder="#viral #fyp #siri">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Who can watch</label>
+          <select class="glass-input" id="uploadPrivacy" style="appearance:none">
+            <option value="public">🌍 Everyone (Public)</option>
+            <option value="followers">👥 Followers Only</option>
+            <option value="private">🔒 Only Me</option>
+          </select>
+        </div>
+        <button class="auth-submit" onclick="doUpload()">🚀 Post Video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NOTIFICATIONS PAGE ===== -->
+  <div id="notifPage" class="page">
+    <div class="top-bar">
+      <div class="top-logo"><span class="top-logo-icon">☯️</span><span class="top-logo-text">Notifications</span></div>
+      <div class="top-actions"><div class="icon-btn" onclick="markAllRead()">✓</div></div>
+    </div>
+    <div class="notif-list" id="notifList"></div>
+  </div>
+
+  <!-- ===== PROFILE PAGE ===== -->
+  <div id="profilePage" class="page">
+    <div class="top-bar">
+      <div class="top-logo"><span class="top-logo-icon">☯️</span><span id="profileHandleTop" class="top-logo-text">Profile</span></div>
+      <div class="top-actions">
+        <div class="icon-btn" onclick="showPage('settingsPage')">⚙️</div>
+        <div class="icon-btn" onclick="showShareModal()">📤</div>
+      </div>
+    </div>
+
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar-ring"></div>
+        <div class="avatar xl" id="profileAvatar">👤</div>
+      </div>
+      <div class="profile-name" id="profileName">User Name</div>
+      <div class="profile-handle" id="profileHandle">@username</div>
+      <div class="profile-bio" id="profileBio">Sharing my world with you ✨ #Siri</div>
+      <div class="profile-stats">
+        <div class="stat-item"><span class="stat-num" id="statVideos">0</span><span class="stat-label">Videos</span></div>
+        <div class="stat-item"><span class="stat-num" id="statFollowers">0</span><span class="stat-label">Followers</span></div>
+        <div class="stat-item"><span class="stat-num" id="statFollowing">0</span><span class="stat-label">Following</span></div>
+        <div class="stat-item"><span class="stat-num" id="statLikes">0</span><span class="stat-label">Likes</span></div>
+      </div>
+      <div class="profile-actions">
+        <button class="glass-btn" onclick="showEditProfile()">✏️ Edit Profile</button>
+        <button class="glass-btn" onclick="showShareModal()">📤 Share</button>
+        <button class="glass-btn" onclick="showPage('settingsPage')">⚙️</button>
+      </div>
+    </div>
+
+    <div class="profile-videos" id="profileVideos"></div>
+    <div class="dev-badge">☯️ Siri · <strong>Developed by Nirosha සඳරුවන්</strong></div>
+  </div>
+
+  <!-- ===== SETTINGS PAGE ===== -->
+  <div id="settingsPage" class="page">
+    <div class="top-bar">
+      <div class="icon-btn" onclick="showPage('profilePage')" style="width:auto;padding:0 12px;">← Back</div>
+      <div class="top-logo"><span class="top-logo-text">Settings</span></div>
+      <div style="width:38px"></div>
+    </div>
+    <div class="settings-header">Settings</div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Account</div>
+      <div class="settings-item" onclick="showEditProfile()">
+        <div class="settings-item-left"><span class="settings-item-icon">👤</span><span class="settings-item-text">Edit Profile</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+      <div class="settings-item" onclick="showToast('🔒 Password changed!')">
+        <div class="settings-item-left"><span class="settings-item-icon">🔒</span><span class="settings-item-text">Change Password</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">📧</span><span class="settings-item-text">Email & Phone</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Privacy</div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">🔐</span><span class="settings-item-text">Private Account</span></div>
+        <div class="toggle" id="togglePrivate" onclick="toggleSwitch('togglePrivate')"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">💬</span><span class="settings-item-text">Allow Comments</span></div>
+        <div class="toggle on" id="toggleComments" onclick="toggleSwitch('toggleComments')"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">❤️</span><span class="settings-item-text">Show Likes Count</span></div>
+        <div class="toggle on" id="toggleLikes" onclick="toggleSwitch('toggleLikes')"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">📥</span><span class="settings-item-text">Allow Downloads</span></div>
+        <div class="toggle on" id="toggleDownload" onclick="toggleSwitch('toggleDownload')"><div class="toggle-thumb"></div></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Notifications</div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">🔔</span><span class="settings-item-text">Push Notifications</span></div>
+        <div class="toggle on" id="togglePush" onclick="toggleSwitch('togglePush')"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">❤️</span><span class="settings-item-text">Likes & Reactions</span></div>
+        <div class="toggle on" id="toggleLikeNotif" onclick="toggleSwitch('toggleLikeNotif')"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">👥</span><span class="settings-item-text">New Followers</span></div>
+        <div class="toggle on" id="toggleFollowNotif" onclick="toggleSwitch('toggleFollowNotif')"><div class="toggle-thumb"></div></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Content & Display</div>
+      <div class="settings-item" onclick="showToast('🌐 Language settings')">
+        <div class="settings-item-left"><span class="settings-item-icon">🌐</span><span class="settings-item-text">Language</span></div>
+        <span class="settings-item-arrow">English ›</span>
+      </div>
+      <div class="settings-item" onclick="showToast('📊 Data Usage settings')">
+        <div class="settings-item-left"><span class="settings-item-icon">📊</span><span class="settings-item-text">Data Usage</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Support</div>
+      <div class="settings-item" onclick="showToast('📋 Report submitted!')">
+        <div class="settings-item-left"><span class="settings-item-icon">🚨</span><span class="settings-item-text">Report a Problem</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+      <div class="settings-item" onclick="showToast('💡 Feedback sent!')">
+        <div class="settings-item-left"><span class="settings-item-icon">💡</span><span class="settings-item-text">Send Feedback</span></div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-left"><span class="settings-item-icon">ℹ️</span><span class="settings-item-text">About Siri</span></div>
+        <span class="settings-item-arrow">v1.0 ›</span>
+      </div>
+    </div>
+
+    <div class="settings-section" style="padding-bottom:20px;">
+      <div class="settings-section-title">Account Actions</div>
+      <div class="settings-item" style="border-color:rgba(255,80,80,0.2);background:rgba(255,50,50,0.05)" onclick="doLogout()">
+        <div class="settings-item-left"><span class="settings-item-icon">🚪</span><span class="settings-item-text" style="color:#ff6b6b;">Log Out</span></div>
+        <span class="settings-item-arrow" style="color:#ff6b6b;">›</span>
+      </div>
+    </div>
+
+    <div class="dev-badge">☯️ Siri v1.0 · <strong>Developed by Nirosha සඳරුවන්</strong></div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav" id="bottomNav">
+  <div class="nav-items">
+    <div class="nav-item active" id="nav-home" onclick="showPage('homePage'); setActiveNav('nav-home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" id="nav-search" onclick="showPage('searchPage'); setActiveNav('nav-search')">
+      <span class="nav-icon">🔍</span><span class="nav-label">Discover</span>
+    </div>
+    <div class="nav-upload" onclick="showPage('uploadPage'); setActiveNav('')">➕</div>
+    <div class="nav-item" id="nav-notif" onclick="showPage('notifPage'); setActiveNav('nav-notif')">
+      <span class="nav-icon">🔔</span><span class="nav-label">Inbox</span>
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="showPage('profilePage'); setActiveNav('nav-profile')">
+      <span class="nav-icon">👤</span><span class="nav-label">Me</span>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal" onclick="closeModal('shareModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Share ☯️ Siri</div>
+    <div class="modal-actions">
+      <button class="modal-action-btn" onclick="doShare('Copy Link')"><span class="modal-action-icon">🔗</span>Copy Link</button>
+      <button class="modal-action-btn" onclick="doShare('WhatsApp')"><span class="modal-action-icon">💚</span>WhatsApp</button>
+      <button class="modal-action-btn" onclick="doShare('Instagram')"><span class="modal-action-icon">📸</span>Instagram</button>
+      <button class="modal-action-btn" onclick="doShare('Facebook')"><span class="modal-action-icon">📘</span>Facebook</button>
+      <button class="modal-action-btn" onclick="doShare('Twitter/X')"><span class="modal-action-icon">🐦</span>Twitter / X</button>
+      <button class="modal-action-btn" onclick="doShare('Download')"><span class="modal-action-icon">⬇️</span>Download Video</button>
+    </div>
+  </div>
+</div>
+
+<!-- Video Options Modal -->
+<div class="modal-overlay" id="videoModal" onclick="closeModal('videoModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="videoModalTitle">Video Options</div>
+    <div class="modal-actions">
+      <button class="modal-action-btn" onclick="doShare('Copy Link'); closeModal('videoModal')"><span class="modal-action-icon">🔗</span>Copy Link</button>
+      <button class="modal-action-btn" onclick="doShare('Download'); closeModal('videoModal')"><span class="modal-action-icon">⬇️</span>Download Video</button>
+      <button class="modal-action-btn" onclick="doShare('WhatsApp'); closeModal('videoModal')"><span class="modal-action-icon">📤</span>Share to...</button>
+      <button class="modal-action-btn" onclick="showToast('🚨 Reported!'); closeModal('videoModal')"><span class="modal-action-icon">🚨</span>Report</button>
+      <button class="modal-action-btn" onclick="showToast('🚫 Not interested'); closeModal('videoModal')"><span class="modal-action-icon">🚫</span>Not Interested</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="editProfileModal" onclick="closeModal('editProfileModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()" style="padding-bottom:32px">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Profile</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="input-group">
+        <label class="input-label">Display Name</label>
+        <input class="glass-input" id="editName" type="text">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Username</label>
+        <input class="glass-input" id="editHandle" type="text">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Bio</label>
+        <textarea class="form-textarea" id="editBio" style="min-height:80px"></textarea>
+      </div>
+      <button class="auth-submit" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== APP STATE =====
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem('siri_users') || '{}');
+let posts = JSON.parse(localStorage.getItem('siri_posts') || '[]');
+
+const EMOJIS = ['🌊','🔥','⚡','🌙','🎭','🌸','🦋','🎨','🌈','💫','🌺','🎵','🌿','✨','🦄','🎯','🌟','🦅','🌊','🎪'];
+const AVATARS = ['🧑','👩','👨','🧔','👱','🧕','👩‍🎤','👨‍🎤','🧑‍🎨','👩‍💻','👨‍💻','🧑‍🚀'];
+
+const SAMPLE_USERS = [
+  {name:'Kavya M', handle:'@kavya_m', avatar:'👩', followers:'12.4K', emoji:'🌸'},
+  {name:'Ravi K', handle:'@ravikumar', avatar:'👨', followers:'8.1K', emoji:'🔥'},
+  {name:'Priya S', handle:'@priya_s', avatar:'🧕', followers:'25K', emoji:'💫'},
+  {name:'Saman W', handle:'@samanw', avatar:'🧔', followers:'5.3K', emoji:'🌊'},
+  {name:'Dilini P', handle:'@dilini_p', avatar:'👩‍🎤', followers:'18K', emoji:'🎵'},
+];
+
+const SAMPLE_POSTS = [
+  {user:'Kavya M', handle:'@kavya_m', avatar:'👩', emoji:'🌸', caption:'Beautiful morning vibes ✨ Life is good when you enjoy the little things 🌺', tags:['#morning','#vibes','#life'], likes:14200, comments:892, shares:431, audio:'Morning Sounds · Nature Mix'},
+  {user:'Ravi K', handle:'@ravikumar', avatar:'👨', emoji:'🔥', caption:'GRIND NEVER STOPS 💪 Monday motivation hits different when you know your why', tags:['#motivation','#grind','#gym'], likes:31000, comments:2100, shares:1800, audio:'FIRE · Motivational'},
+  {user:'Priya S', handle:'@priya_s', avatar:'🧕', emoji:'💫', caption:'Dancing in the rain 🌧️ Sometimes you just need to let go and feel the moment', tags:['#dance','#fyp','#viral'], likes:89000, comments:4200, shares:12000, audio:'Trending Sound · DJ Mix'},
+  {user:'Saman W', handle:'@samanw', avatar:'🧔', emoji:'🌊', caption:'Ocean is calling 🌊 Found this hidden gem beach in Sri Lanka', tags:['#srilanka','#travel','#beach'], likes:7800, comments:340, shares:220, audio:'Ocean Waves · Chill'},
+  {user:'Dilini P', handle:'@dilini_p', avatar:'👩‍🎤', emoji:'🎵', caption:'My new original song is OUT NOW 🎤 Go check my full cover in bio! Love you all ❤️', tags:['#music','#singer','#original'], likes:45000, comments:6700, shares:9800, audio:'Original Sound · Dilini P'},
+  {user:'Nirosha සඳරුවන්', handle:'@nirosha_s', avatar:'☯️', emoji:'☯️', caption:'Introducing Siri — my new social media platform ✨ Built with love for Sri Lanka 🇱🇰', tags:['#siri','#app','#srilanka'], likes:100000, comments:8900, shares:24000, audio:'Siri Official · Nirosha'},
+];
+
+const TRENDS = ['#fyp', '#viral', '#srilanka', '#dance', '#music', '#travel', '#food', '#love', '#funny', '#art', '#gaming', '#fashion', '#nature', '#motivation'];
+
+// ===== INIT =====
+function init() {
+  if (!posts.length) {
+    posts = SAMPLE_POSTS.map((p,i) => ({...p, id:i, liked:false, saved:false, views: Math.floor(Math.random()*500000+10000)}));
+    savePosts();
+  }
+  renderSuggest();
+  renderFeed();
+  renderSearch();
+  renderNotifs();
+}
+
+// ===== AUTH =====
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? 'block' : 'none';
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if (!u || !p) { showToast('⚠️ Fill all fields!'); return; }
+
+  let found = null;
+  if (users[u]) found = users[u];
+  else { for (const k in users) { if (users[k].email === u) { found = users[k]; break; } } }
+
+  if (!found || found.password !== p) { showToast('❌ Wrong credentials!'); return; }
+  loginSuccess(found);
+}
+
+function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const user = document.getElementById('regUser').value.trim().replace('@','');
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+
+  if (!name || !user || !email || !pass) { showToast('⚠️ Fill all fields!'); return; }
+  if (users[user]) { showToast('❌ Username taken!'); return; }
+  if (pass.length < 6) { showToast('⚠️ Password min 6 chars!'); return; }
+
+  const newUser = {
+    name, username: user, email, password: pass,
+    bio: 'New to Siri! ✨',
+    avatar: AVATARS[Math.floor(Math.random()*AVATARS.length)],
+    followers: Math.floor(Math.random()*50),
+    following: Math.floor(Math.random()*30),
+    likes: 0, videos: 0,
+    joined: new Date().toISOString()
+  };
+  users[user] = newUser;
+  localStorage.setItem('siri_users', JSON.stringify(users));
+  loginSuccess(newUser);
+}
+
+function loginSuccess(user) {
+  currentUser = user;
+  localStorage.setItem('siri_current', JSON.stringify(user));
+  showToast(`✨ Welcome back, ${user.name}!`);
+  document.getElementById('bottomNav').classList.add('visible');
+  updateProfileUI();
+  showPage('homePage');
+  setActiveNav('nav-home');
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('siri_current');
+  document.getElementById('bottomNav').classList.remove('visible');
+  showPage('authPage');
+  showToast('👋 Logged out!');
+}
+
+// ===== NAVIGATION =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(id);
+  page.classList.add('active');
+  page.classList.add('page-enter');
+  setTimeout(() => page.classList.remove('page-enter'), 400);
+}
+
+function setActiveNav(id) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (id) document.getElementById(id)?.classList.add('active');
+}
+
+// ===== FEED =====
+function renderSuggest() {
+  const c = document.getElementById('suggestScroll');
+  c.innerHTML = SAMPLE_USERS.map((u,i) => `
+    <div class="suggest-card">
+      <div class="avatar lg" style="margin:0 auto">${u.avatar}</div>
+      <div class="suggest-name">${u.name}</div>
+      <div class="suggest-handle">${u.handle}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${u.followers} followers</div>
+      <button class="follow-btn" id="sugg${i}" onclick="toggleFollow(this, '${u.name}')">${u.emoji} Follow</button>
+    </div>`).join('');
+}
+
+function toggleFollow(btn, name) {
+  const isFollow = btn.classList.toggle('following');
+  btn.textContent = isFollow ? '✓ Following' : SAMPLE_USERS.find(u=>u.name===name)?.emoji + ' Follow';
+  showToast(isFollow ? `✅ Following ${name}!` : `Unfollowed ${name}`);
+}
+
+function renderFeed() {
+  const c = document.getElementById('feedContainer');
+  c.innerHTML = posts.map(p => `
+    <div class="video-card" id="post${p.id}">
+      <div class="video-thumb">
+        <span class="video-thumb-emoji">${p.emoji}</span>
+      </div>
+      <div class="play-overlay"><div class="play-btn-large">▶</div></div>
+      <div class="video-overlay">
+        <div class="video-user">
+          <div class="avatar" onclick="showToast('👤 ${p.user}'s profile')">${p.avatar}</div>
+          <div>
+            <div class="video-username">${p.user}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5)">${p.handle}</div>
+          </div>
+          <button class="follow-btn" style="margin-left:auto;width:auto;padding:6px 14px" onclick="toggleFollow(this,'${p.user}')">+ Follow</button>
+        </div>
+        <div class="video-caption">${p.caption}</div>
+        <div class="video-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="video-actions">
+        <div class="action-btn ${p.liked?'liked':''}" onclick="toggleLike(${p.id}, this)" id="likeBtn${p.id}">
+          <div class="action-icon">${p.liked?'❤️':'🤍'}</div>
+          <span class="action-count" id="likeCount${p.id}">${fmtNum(p.likes)}</span>
+        </div>
+        <div class="action-btn" onclick="showToast('💬 Comments coming soon!')">
+          <div class="action-icon">💬</div>
+          <span class="action-count">${fmtNum(p.comments)}</span>
+        </div>
+        <div class="action-btn" onclick="showToast('🔖 Saved!')">
+          <div class="action-icon">🔖</div>
+          <span class="action-count">Save</span>
+        </div>
+        <div class="action-btn" onclick="openVideoModal('${p.user}')">
+          <div class="action-icon">📤</div>
+          <span class="action-count">${fmtNum(p.shares)}</span>
+        </div>
+        <div class="action-btn" onclick="openVideoModal('${p.user}')">
+          <div class="action-icon">⋯</div>
+          <span class="action-count">More</span>
+        </div>
+      </div>
+      <div class="audio-bar">
+        <div class="audio-disc">🎵</div>
+        <div class="audio-info">${p.audio || 'Original Sound'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleLike(id, el) {
+  const post = posts.find(p=>p.id===id);
+  post.liked = !post.liked;
+  post.likes += post.liked ? 1 : -1;
+  document.getElementById(`likeBtn${id}`).classList.toggle('liked', post.liked);
+  el.querySelector('.action-icon').textContent = post.liked ? '❤️' : '🤍';
+  document.getElementById(`likeCount${id}`).textContent = fmtNum(post.likes);
+  if (post.liked) { el.classList.add('heart-pop'); setTimeout(()=>el.classList.remove('heart-pop'), 500); }
+  savePosts();
+}
+
+function switchFeed(type, el) {
+  document.querySelectorAll('.feed-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if (type === 'live') showToast('🔴 No live streams right now!');
+  else if (type === 'follow') showToast('👥 Follow some creators first!');
+}
+
+// ===== SEARCH =====
+function renderSearch() {
+  // Trends
+  document.getElementById('trendChips').innerHTML = TRENDS.map(t =>
+    `<div class="trend-chip" onclick="searchFor('${t}')">${t}</div>`).join('');
+
+  // Grid
+  document.getElementById('searchGrid').innerHTML = posts.map(p => `
+    <div class="search-video-item" onclick="showToast('▶️ Playing video...')">
+      ${p.emoji}
+      <div class="search-item-overlay">❤️ ${fmtNum(p.likes)}</div>
+    </div>`).join('');
+}
+
+function searchFor(tag) {
+  document.getElementById('searchField').value = tag;
+  doSearch();
+  showToast(`🔍 Searching ${tag}...`);
+}
+
+function doSearch() {
+  const q = document.getElementById('searchField').value.trim();
+  document.getElementById('searchClear').style.display = q ? 'block' : 'none';
+  if (!q) { renderSearch(); return; }
+  const filtered = posts.filter(p =>
+    p.caption.toLowerCase().includes(q.toLowerCase()) ||
+    p.tags.join(' ').includes(q.toLowerCase()) ||
+    p.user.toLowerCase().includes(q.toLowerCase())
+  );
+  document.getElementById('searchGrid').innerHTML = filtered.length
+    ? filtered.map(p => `<div class="search-video-item" onclick="showToast('▶️ Playing...')">${p.emoji}<div class="search-item-overlay">❤️ ${fmtNum(p.likes)}</div></div>`).join('')
+    : `<div style="grid-column:span 2;text-align:center;padding:40px;color:var(--text3)">🔍 No results for "${q}"</div>`;
+}
+
+function clearSearch() {
+  document.getElementById('searchField').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  renderSearch();
+}
+
+// ===== UPLOAD =====
+function triggerUpload() { document.getElementById('videoFile').click(); }
+
+function fileSelected() {
+  const f = document.getElementById('videoFile').files[0];
+  if (f) showToast(`✅ Selected: ${f.name}`);
+}
+
+function cancelUpload() { showPage('homePage'); setActiveNav('nav-home'); }
+
+function doUpload() {
+  const cap = document.getElementById('uploadCaption').value.trim();
+  if (!cap) { showToast('⚠️ Add a caption!'); return; }
+  const tags = document.getElementById('uploadTags').value.split(' ').filter(t=>t.startsWith('#'));
+
+  const newPost = {
+    id: posts.length,
+    user: currentUser?.name || 'You',
+    handle: '@' + (currentUser?.username || 'you'),
+    avatar: currentUser?.avatar || '👤',
+    emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)],
+    caption: cap,
+    tags: tags.length ? tags : ['#siri'],
+    likes: 0, comments: 0, shares: 0,
+    liked: false, saved: false,
+    audio: 'Original Sound · ' + (currentUser?.name || 'You'),
+    views: 0
+  };
+
+  posts.unshift(newPost);
+  savePosts();
+
+  if (currentUser) {
+    currentUser.videos = (currentUser.videos||0)+1;
+    users[currentUser.username] = currentUser;
+    localStorage.setItem('siri_users', JSON.stringify(users));
+    localStorage.setItem('siri_current', JSON.stringify(currentUser));
+  }
+
+  document.getElementById('uploadCaption').value = '';
+  document.getElementById('uploadTags').value = '';
+  document.getElementById('videoFile').value = '';
+
+  renderFeed();
+  updateProfileUI();
+  showToast('🎉 Video posted!');
+  showPage('homePage');
+  setActiveNav('nav-home');
+}
+
+// ===== NOTIFICATIONS =====
+const NOTIFS = [
+  {avatar:'👩', text:'<strong>Kavya M</strong> liked your video', time:'2m ago', unread:true},
+  {avatar:'👨', text:'<strong>Ravi K</strong> started following you', time:'15m ago', unread:true},
+  {avatar:'🧕', text:'<strong>Priya S</strong> commented: "So beautiful! 🌸"', time:'1h ago', unread:true},
+  {avatar:'🧔', text:'<strong>Saman W</strong> liked your video', time:'3h ago', unread:false},
+  {avatar:'☯️', text:'<strong>Siri Team</strong> — Welcome to Siri! Start sharing your world ✨', time:'1d ago', unread:false},
+  {avatar:'👩‍🎤', text:'<strong>Dilini P</strong> is now following you!', time:'2d ago', unread:false},
+];
+
+function renderNotifs() {
+  document.getElementById('notifList').innerHTML = NOTIFS.map(n => `
+    <div class="notif-item ${n.unread?'unread':''}" onclick="showToast('📬 Notification opened!')">
+      <div class="notif-avatar">${n.avatar}</div>
+      <div class="notif-content">
+        <div class="notif-text">${n.text}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+      ${n.unread ? '<div class="notif-unread-dot"></div>' : ''}
+    </div>`).join('');
+}
+
+function markAllRead() {
+  NOTIFS.forEach(n=>n.unread=false);
+  renderNotifs();
+  showToast('✅ All marked as read!');
+}
+
+// ===== PROFILE =====
+function updateProfileUI() {
+  if (!currentUser) return;
+  const u = currentUser;
+  document.getElementById('profileName').textContent = u.name;
+  document.getElementById('profileHandle').textContent = '@' + u.username;
+  document.getElementById('profileHandleTop').textContent = '@' + u.username;
+  document.getElementById('profileBio').textContent = u.bio || 'Sharing my world ✨';
+  document.getElementById('profileAvatar').textContent = u.avatar;
+  document.getElementById('statFollowers').textContent = fmtNum(u.followers || 0);
+  document.getElementById('statFollowing').textContent = fmtNum(u.following || 0);
+  document.getElementById('statVideos').textContent = u.videos || 0;
+  document.getElementById('statLikes').textContent = fmtNum(u.likes || 0);
+
+  // Profile videos
+  const myPosts = posts.filter(p => p.handle === '@' + u.username);
+  document.getElementById('profileVideos').innerHTML = myPosts.length
+    ? myPosts.map(p => `
+      <div class="profile-video-item" onclick="showToast('▶️ Playing your video...')">
+        ${p.emoji}
+        <div class="profile-video-count">▶ ${fmtNum(p.views||0)}</div>
+      </div>`).join('')
+    : `<div style="grid-column:span 3;text-align:center;padding:40px;color:var(--text3)">No videos yet 📹<br><br><button class="glass-btn" onclick="showPage('uploadPage')">Upload First Video</button></div>`;
+}
+
+function showEditProfile() {
+  if (!currentUser) return;
+  document.getElementById('editName').value = currentUser.name;
+  document.getElementById('editHandle').value = '@' + currentUser.username;
+  document.getElementById('editBio').value = currentUser.bio || '';
+  document.getElementById('editProfileModal').classList.add('open');
+}
+
+function saveProfile() {
+  if (!currentUser) return;
+  const name = document.getElementById('editName').value.trim();
+  const bio = document.getElementById('editBio').value.trim();
+  if (!name) { showToast('⚠️ Name required!'); return; }
+  currentUser.name = name;
+  currentUser.bio = bio;
+  users[currentUser.username] = currentUser;
+  localStorage.setItem('siri_users', JSON.stringify(users));
+  localStorage.setItem('siri_current', JSON.stringify(currentUser));
+  updateProfileUI();
+  closeModal('editProfileModal');
+  showToast('✅ Profile updated!');
+}
+
+// ===== MODALS =====
+function showShareModal() { document.getElementById('shareModal').classList.add('open'); }
+function openVideoModal(user) {
+  document.getElementById('videoModalTitle').textContent = `@${user}'s Video`;
+  document.getElementById('videoModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function doShare(method) {
+  const msgs = {
+    'Copy Link': '🔗 Link copied!',
+    'WhatsApp': '💚 Opening WhatsApp...',
+    'Instagram': '📸 Opening Instagram...',
+    'Facebook': '📘 Opening Facebook...',
+    'Twitter/X': '🐦 Opening Twitter/X...',
+    'Download': '⬇️ Download started!'
+  };
+  showToast(msgs[method] || '📤 Shared!');
+  closeModal('shareModal');
+}
+
+// ===== SETTINGS =====
+function toggleSwitch(id) {
+  document.getElementById(id).classList.toggle('on');
+  showToast('⚙️ Setting updated!');
+}
+
+// ===== UTILS =====
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n;
+}
+
+function savePosts() { localStorage.setItem('siri_posts', JSON.stringify(posts)); }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== BOOT =====
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('siri_current');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    document.getElementById('bottomNav').classList.add('visible');
+    updateProfileUI();
+    showPage('homePage');
+    setActiveNav('nav-home');
+  }
+  init();
+});
+</script>
+</body>
+</html>
